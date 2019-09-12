@@ -3,7 +3,8 @@ package utils
 var VarsConfig *Config
 
 type Config struct {
-	Path string `key:"config.path"`
+	Path      string `key:"config.path"`
+	DockerAPI string `key:"config.dockerApi",default:"v1.37"`
 	//oss
 	OssEndpoint string `key:"oss.endpoint"`
 	OssAkId     string `key:"oss.akId"`

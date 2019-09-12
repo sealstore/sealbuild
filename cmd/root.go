@@ -34,6 +34,7 @@ var rootCmd = &cobra.Command{
 		config := &utils.Config{}
 		utils.LoadIni(config, cfgFile)
 		utils.VarsConfig = config
+		_ = os.Setenv("DOCKER_API_VERSION", config.DockerAPI)
 		pkg.Build(config.AppEnable, config.CloudKernelEnable)
 	},
 }

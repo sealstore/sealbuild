@@ -21,12 +21,12 @@ func app() {
 		if v != "" {
 			logger.Info("images:%s", v)
 			cmd := fmt.Sprintf("docker pull %s", v)
-			var command string
-			var err error
-			if command, err = utils.Shell(cmd); err != nil {
-				logger.Error(err)
-			}
-			logger.Alert(command)
+			//var command string
+			//var err error
+			//if command, err = utils.Shell(cmd); err != nil {
+			//	logger.Error(err)
+			//}
+			logger.Alert(cmd)
 		}
 	}
 }
