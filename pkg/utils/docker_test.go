@@ -5,6 +5,8 @@ import (
 )
 
 func TestDockerPull(t *testing.T) {
-	DockerPull("nginx:alpine")
-	//DockerRmi("nginx:alpine")
+	//DockerPull("nginx")
+	//DockerRmi("nginx")
+	//DockerSave("/home/cuisongliu/aa.tar",[]string{"nginx"})
+	DockerLoad("/home/cuisongliu/aa.tar")
 }
