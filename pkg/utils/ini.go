@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/wonderivan/logger"
 	"gopkg.in/ini.v1"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ func loadIniFile(path string) *ini.File {
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("[globals]读取配置文件失败,请检测配置文件路径是否存在[" + path + "]")
+			os.Exit(1)
 		}
 	}()
 	if err != nil {
@@ -48,7 +50,7 @@ func loadIni(data interface{}, iniConfigure *ini.File) {
 		key := eid.Tag.Get("key")
 		if key == "" {
 			logger.Error("结构体[%s]中的字段%s标签key属性为空,请修改后重试", tp.Name(), eid.Name)
-			panic("结构体中的标签key属性为空,请修改后重试")
+			os.Exit(1)
 		}
 		keys := priGetKey(key)
 		//logger.Alert("读取配置:key:%s", key)
@@ -59,11 +61,11 @@ func loadIni(data interface{}, iniConfigure *ini.File) {
 		case reflect.String:
 			value := iniConfigure.Section(section).Key(key).MustString(defaults)
 			vid.SetString(value)
-			logger.Alert("读取配置:[%s]%s=%s", section, key, value)
+			logger.Trace("读取配置:[%s]%s=%s", section, key, value)
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			var defaultValue int
 			if defaults == "" {
-				logger.Debug("结构体[%s]中的字段%s标签defaults属性为空,默认值为0", tp.Name(), eid.Name)
+				logger.Trace("结构体[%s]中的字段%s标签defaults属性为空,默认值为0", tp.Name(), eid.Name)
 				defaultValue = 0
 			} else {
 				var err error
@@ -73,11 +75,11 @@ func loadIni(data interface{}, iniConfigure *ini.File) {
 			}
 			value := iniConfigure.Section(section).Key(key).MustInt(defaultValue)
 			vid.SetInt(int64(value))
-			logger.Alert("读取配置:[%s]%s=%d", section, key, value)
+			logger.Trace("读取配置:[%s]%s=%d", section, key, value)
 		case reflect.Bool:
 			var defaultValue bool
 			if defaults == "" {
-				logger.Debug("结构体[%s]中的字段%s标签defaults属性为空,默认值为false", tp.Name(), eid.Name)
+				logger.Trace("结构体[%s]中的字段%s标签defaults属性为空,默认值为false", tp.Name(), eid.Name)
 				defaultValue = false
 			} else {
 				var err error
@@ -87,7 +89,7 @@ func loadIni(data interface{}, iniConfigure *ini.File) {
 			}
 			value := iniConfigure.Section(section).Key(key).MustBool(defaultValue)
 			vid.SetBool(value)
-			logger.Alert("读取配置:[%s]%s=%t", section, key, value)
+			logger.Trace("读取配置:[%s]%s=%t", section, key, value)
 		}
 
 	}

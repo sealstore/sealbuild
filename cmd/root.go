@@ -39,7 +39,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&cfgFile, "conf", "f", "config", "sealbuild config.ini file location")
+	rootCmd.Flags().StringVarP(&cfgFile, "conf", "f", "config.ini", "sealbuild config.ini file location")
 }
 
 func Execute() {

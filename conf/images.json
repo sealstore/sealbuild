@@ -1,3 +1,5 @@
 [
-  "nginx"
+  "nginx",
+  "nginx:alpine",
+  "alpine:3.7"
 ]

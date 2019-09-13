@@ -6,6 +6,7 @@ import (
 	"github.com/fanux/sealbuild/pkg/utils"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
+	"os"
 )
 
 func app() {
@@ -19,14 +20,29 @@ func app() {
 	_ = json.Unmarshal(imagesData, &images)
 	for _, v := range images {
 		if v != "" {
-			logger.Info("images:%s", v)
-			cmd := fmt.Sprintf("docker pull %s", v)
-			//var command string
-			//var err error
-			//if command, err = utils.Shell(cmd); err != nil {
-			//	logger.Error(err)
-			//}
-			logger.Alert(cmd)
+			utils.DockerPull(v)
 		}
 	}
+	//生成文件
+	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", utils.VarsConfig.AppName+utils.VarsConfig.AppVersion)
+	utils.DockerSave(tmpImageName, images)
+	tmpAppDirName := fmt.Sprintf("/tmp/%s", utils.VarsConfig.AppName+utils.VarsConfig.AppVersion)
+	_ = os.RemoveAll(tmpAppDirName)
+	err := os.Mkdir(tmpAppDirName, 0755)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals]创建目录失败: /tmp/"+utils.VarsConfig.AppName+utils.VarsConfig.AppVersion, err)
+			os.Exit(1)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
+	//config.json
+	writeFile(tmpAppDirName+"/config.json", templateContent("app", ""))
+	//manifests
+
+	//删除镜像文件
+	_ = os.Remove(tmpImageName)
 }
