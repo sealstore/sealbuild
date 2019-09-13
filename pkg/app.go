@@ -10,10 +10,11 @@ import (
 )
 
 func app() {
+	config := utils.VarsConfig
 	//生成的文件名称
-	fileName := utils.VarsConfig.AppName + utils.VarsConfig.AppVersion + ".tar.gz"
+	fileName := config.AppName + config.AppVersion + ".tar.gz"
 	logger.Warn("app:%s", fileName)
-	imagesData, _ := ioutil.ReadFile(utils.VarsConfig.AppImages)
+	imagesData, _ := ioutil.ReadFile(config.AppImages)
 	logger.Debug("\njson:%s", string(imagesData))
 	var images []string
 	//注意数组转换需要加 &
@@ -24,14 +25,14 @@ func app() {
 		}
 	}
 	//生成文件
-	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", utils.VarsConfig.AppName+utils.VarsConfig.AppVersion)
+	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", config.AppName+config.AppVersion)
 	utils.DockerSave(tmpImageName, images)
-	tmpAppDirName := fmt.Sprintf("/tmp/%s", utils.VarsConfig.AppName+utils.VarsConfig.AppVersion)
+	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName+config.AppVersion)
 	_ = os.RemoveAll(tmpAppDirName)
 	err := os.Mkdir(tmpAppDirName, 0755)
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[globals]创建目录失败: /tmp/"+utils.VarsConfig.AppName+utils.VarsConfig.AppVersion, err)
+			logger.Error("[globals]创建目录失败: /tmp/"+config.AppName+config.AppVersion, err)
 			os.Exit(1)
 		}
 	}()
@@ -40,9 +41,36 @@ func app() {
 	}
 	_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
 	//config.json
-	writeFile(tmpAppDirName+"/config.json", templateContent("app", ""))
+	writeFile(tmpAppDirName+"/config.json", templateContent("app", "kubectl -k manifests"))
 	//manifests
-
-	//删除镜像文件
-	_ = os.Remove(tmpImageName)
+	_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
+	_ = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests")
+	//tar
+	tmpAppDir, _ := os.Open(tmpAppDirName)
+	var tarFiles []*os.File
+	tarFiles = append(tarFiles, tmpAppDir)
+	logger.Info("[globals]开始创建压缩包。")
+	err = utils.Compress(tarFiles, config.Path+"/"+fileName)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals]创建tar失败: ", err)
+			os.Exit(1)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	logger.Info("[globals]创建压缩包成功。")
+	if config.AppOssEnable {
+		oss := &utils.Oss{
+			Endpoint:   config.OssEndpoint,
+			AkId:       config.OssAkId,
+			AkSk:       config.OssAkSk,
+			Bucket:     config.OssBucket,
+			Object:     config.AppOssObject + fileName,
+			UploadFile: config.Path + "/" + fileName,
+		}
+		oss.OssUpload()
+		logger.Info("[globals]上传oss成功。")
+	}
 }
