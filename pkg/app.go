@@ -61,16 +61,4 @@ func app() {
 		panic(1)
 	}
 	logger.Info("[globals]创建压缩包成功。")
-	if config.AppOssEnable {
-		oss := &utils.Oss{
-			Endpoint:   config.OssEndpoint,
-			AkId:       config.OssAkId,
-			AkSk:       config.OssAkSk,
-			Bucket:     config.OssBucket,
-			Object:     config.AppOssObject + fileName,
-			UploadFile: config.Path + "/" + fileName,
-		}
-		oss.OssUpload()
-		logger.Info("[globals]上传oss成功。")
-	}
 }

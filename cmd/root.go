@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 		config := &utils.Config{}
 		utils.LoadIni(config, cfgFile)
 		utils.VarsConfig = config
-		pkg.Build(config.AppEnable, config.CloudKernelEnable)
+		pkg.Build(config.AppEnable)
 	},
 }
 
