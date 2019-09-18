@@ -27,7 +27,7 @@ func app() {
 	//生成文件
 	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", config.AppName+config.AppVersion)
 	utils.DockerSave(tmpImageName, images)
-	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName+config.AppVersion)
+	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName)
 	_ = os.RemoveAll(tmpAppDirName)
 	err := os.Mkdir(tmpAppDirName, 0755)
 	defer func() {
