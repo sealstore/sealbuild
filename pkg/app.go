@@ -41,7 +41,13 @@ func app() {
 	}
 	_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
 	//config.json
-	writeFile(tmpAppDirName+"/config.json", templateContent("app", "kubectl -k manifests"))
+	var shell string
+	if utils.VarsConfig.AppKustomize {
+		shell = "kubectl apply -k manifests"
+	} else {
+		shell = "kubectl apply -f manifests"
+	}
+	writeFile(tmpAppDirName+"/config.json", templateContent("app", shell))
 	//manifests
 	_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
 	_ = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests")
