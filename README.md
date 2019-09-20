@@ -22,6 +22,7 @@ bucket=cuisongliu
 enable=true
 name=tekton
 version=
+kustomize=false
 manifests=/home/cuisongliu/kust/tekton/manifests
 images=conf/images.json
 ossEnable=true
