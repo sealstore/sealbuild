@@ -27,7 +27,7 @@ func app() {
 	//生成文件
 	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", config.AppName+config.AppVersion)
 	utils.DockerSave(tmpImageName, images)
-	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName+config.AppVersion)
+	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName)
 	_ = os.RemoveAll(tmpAppDirName)
 	err := os.Mkdir(tmpAppDirName, 0755)
 	defer func() {
@@ -61,16 +61,4 @@ func app() {
 		panic(1)
 	}
 	logger.Info("[globals]创建压缩包成功。")
-	if config.AppOssEnable {
-		oss := &utils.Oss{
-			Endpoint:   config.OssEndpoint,
-			AkId:       config.OssAkId,
-			AkSk:       config.OssAkSk,
-			Bucket:     config.OssBucket,
-			Object:     config.AppOssObject + fileName,
-			UploadFile: config.Path + "/" + fileName,
-		}
-		oss.OssUpload()
-		logger.Info("[globals]上传oss成功。")
-	}
 }

@@ -1,10 +1,7 @@
 package pkg
 
-func Build(appEnable, cloudKernelEnable bool) {
+func Build(appEnable bool) {
 	if appEnable {
 		app()
-	}
-	if cloudKernelEnable {
-		cloudKernel()
 	}
 }
