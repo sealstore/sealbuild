@@ -1,4 +1,4 @@
-module github.com/fanux/sealbuild
+module github.com/sealstore/sealbuild
 
 go 1.12
 

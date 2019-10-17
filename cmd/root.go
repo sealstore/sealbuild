@@ -16,8 +16,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealbuild/pkg"
-	"github.com/fanux/sealbuild/pkg/utils"
+	"github.com/sealstore/sealbuild/pkg"
+	"github.com/sealstore/sealbuild/pkg/utils"
 	"github.com/spf13/cobra"
 	"os"
 )

@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/fanux/sealbuild/cmd"
+import "github.com/sealstore/sealbuild/cmd"
 
 func main() {
 	cmd.Execute()

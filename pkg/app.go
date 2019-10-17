@@ -3,7 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fanux/sealbuild/pkg/utils"
+	"github.com/sealstore/sealbuild/pkg/utils"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
 	"os"
