@@ -2,105 +2,103 @@ package utils
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
-//压缩 使用gzip压缩成tar.gz
-func Compress(files []*os.File, dest string) error {
-	d, _ := os.OpenFile(dest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-	defer d.Close()
-	gw := gzip.NewWriter(d)
-	defer gw.Close()
-	tw := tar.NewWriter(gw)
-	defer tw.Close()
-	for _, file := range files {
-		err := compress(file, "", tw)
-		if err != nil {
-			return err
-		}
+//压缩单个文件
+func tarFile(filesource string, sfileInfo os.FileInfo, tarwriter *tar.Writer) error {
+	sfile, err := os.Open(filesource)
+	if err != nil {
+		return err
+	}
+	defer sfile.Close()
+	header, err := tar.FileInfoHeader(sfileInfo, "")
+	if err != nil {
+		return err
+	}
+	header.Name = filesource
+	err = tarwriter.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(tarwriter, sfile); err != nil {
+		return err
 	}
 	return nil
 }
 
-func compress(file *os.File, prefix string, tw *tar.Writer) error {
-	info, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	if info.IsDir() {
-		prefix = prefix + "/" + info.Name()
-		fileInfos, err := file.Readdir(-1)
-		if err != nil {
+//压缩文件夹
+func tarFolder(directory string, tarwriter *tar.Writer) error {
+	return filepath.Walk(directory, func(targetpath string, file os.FileInfo, err error) error {
+		//read the file failure
+		if file == nil {
 			return err
 		}
-		for _, fi := range fileInfos {
-			f, err := os.Open(file.Name() + "/" + fi.Name())
+		if file.IsDir() {
+			if directory == targetpath {
+				return nil
+			}
+			header, err := tar.FileInfoHeader(file, "")
 			if err != nil {
 				return err
 			}
-			err = compress(f, prefix, tw)
+			header.Name = filepath.Join(directory, strings.TrimPrefix(targetpath, directory))
+			if err = tarwriter.WriteHeader(header); err != nil {
+				return err
+			}
+			os.Mkdir(strings.TrimPrefix(directory, file.Name()), os.ModeDir)
+			//如果压缩的目录里面还有目录，则递归压缩
+			return tarFolder(targetpath, tarwriter)
+		}
+		return tarFile(targetpath, file, tarwriter)
+	})
+}
+
+//untarFile 解压
+func untarFile(tarFile string, untarPath string) error {
+	//打开要解包的文件，tarFile是要解包的 .tar 文件的路径
+	fr, er := os.Open(tarFile)
+	if er != nil {
+		return er
+	}
+	defer fr.Close()
+	// 创建 tar.Reader，准备执行解包操作
+	tr := tar.NewReader(fr)
+	//用 tr.Next() 来遍历包中的文件，然后将文件的数据保存到磁盘中
+	for hdr, er := tr.Next(); er != io.EOF; hdr, er = tr.Next() {
+		if er != nil {
+			return er
+		}
+		//先创建目录
+		fileName := untarPath + "/" + hdr.Name
+		dir := path.Dir(fileName)
+		_, err := os.Stat(dir)
+		//如果err 为空说明文件夹已经存在，就不用创建
+		if err != nil {
+			err = os.MkdirAll(dir, os.ModePerm)
 			if err != nil {
 				return err
 			}
 		}
-	} else {
-		header, err := tar.FileInfoHeader(info, "")
-		header.Name = prefix + "/" + header.Name
-		if err != nil {
-			return err
+		//获取文件信息
+		fi := hdr.FileInfo()
+		//创建空文件，准备写入解压后的数据
+		fw, er := os.Create(fileName)
+		if er != nil {
+			return er
 		}
-		err = tw.WriteHeader(header)
-		if err != nil {
-			return err
+		defer fw.Close()
+		// 写入解压后的数据
+		_, er = io.Copy(fw, tr)
+		if er != nil {
+			return er
 		}
-		_, err = io.Copy(tw, file)
-		file.Close()
-		if err != nil {
-			return err
-		}
+		// 设置文件权限
+		os.Chmod(fileName, fi.Mode().Perm())
 	}
 	return nil
-}
-
-//解压 tar.gz
-func DeCompress(tarFile, dest string) error {
-	srcFile, err := os.Open(tarFile)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-	gr, err := gzip.NewReader(srcFile)
-	if err != nil {
-		return err
-	}
-	defer gr.Close()
-	tr := tar.NewReader(gr)
-	for {
-		hdr, err := tr.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				return err
-			}
-		}
-		filename := dest + hdr.Name
-		file, err := createFile(filename)
-		if err != nil {
-			return err
-		}
-		io.Copy(file, tr)
-	}
-	return nil
-}
-
-func createFile(name string) (*os.File, error) {
-	err := os.MkdirAll(string([]rune(name)[0:strings.LastIndex(name, "/")]), 0755)
-	if err != nil {
-		return nil, err
-	}
-	return os.Create(name)
 }
