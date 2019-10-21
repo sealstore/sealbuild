@@ -7,6 +7,7 @@ import (
 	"github.com/wonderivan/logger"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 func app() {
@@ -47,7 +48,7 @@ func app() {
 	} else {
 		shell = "kubectl apply -f manifests"
 	}
-	writeFile(tmpAppDirName+"/config.json", templateContent("app", shell))
+	writeFile(tmpAppDirName+"/config", templateContent(shell, strings.Join(images, " ")))
 	//manifests
 	_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
 	_ = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests")

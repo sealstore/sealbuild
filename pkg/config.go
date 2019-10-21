@@ -7,10 +7,10 @@ import (
 	"text/template"
 )
 
-const templateText = string(`{ 
-   "name": "{{.Name}}",
-   "shell" : "{{.Shell}}"
-}`)
+const templateText = string(`LOAD docker load -i image.tar
+APPLY {{.Shell}}
+DELETE kubectl delete -f manifests
+REMOVE sleep 10 && docker rmi -f {{.Images}}`)
 
 func writeFile(fileName string, data []byte) {
 	file, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
@@ -19,7 +19,7 @@ func writeFile(fileName string, data []byte) {
 	}
 }
 
-func templateContent(name, shell string) []byte {
+func templateContent(shell, images string) []byte {
 	tmpl, err := template.New("text").Parse(templateText)
 	defer func() {
 		if r := recover(); r != nil {
@@ -30,7 +30,7 @@ func templateContent(name, shell string) []byte {
 		panic(1)
 	}
 	var envMap = make(map[string]interface{})
-	envMap["Name"] = name
+	envMap["Images"] = images
 	envMap["Shell"] = shell
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
