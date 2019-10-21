@@ -7,13 +7,14 @@ import (
 	"github.com/wonderivan/logger"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 )
 
 func app() {
 	config := utils.VarsConfig
 	//生成的文件名称
-	fileName := config.AppName + config.AppVersion + ".tar.gz"
+	fileName := config.AppName + config.AppVersion + ".tar"
 	logger.Warn("app:%s", fileName)
 	imagesData, _ := ioutil.ReadFile(config.AppImages)
 	logger.Debug("\njson:%s", string(imagesData))
@@ -41,6 +42,11 @@ func app() {
 		panic(1)
 	}
 	_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
+
+	tarFile, _ := os.Open(tmpAppDirName + "/images.tar")
+	_ = utils.Compress([]*os.File{tarFile}, tmpAppDirName+"/images.tar.gz")
+	_ = os.RemoveAll(tmpAppDirName + "/images.tar")
+
 	//config.json
 	var shell string
 	if utils.VarsConfig.AppKustomize {
@@ -57,7 +63,25 @@ func app() {
 	var tarFiles []*os.File
 	tarFiles = append(tarFiles, tmpAppDir)
 	logger.Info("[globals]开始创建压缩包。")
-	err = utils.Compress(tarFiles, config.Path+"/"+fileName)
+	var tarFilesArr []string
+	tarFilesArr = append(tarFilesArr, "config")
+	tarFilesArr = append(tarFilesArr, "images.tar.gz")
+	tarFilesArr = append(tarFilesArr, "manifests")
+	shellTar := fmt.Sprintf("cd %s && tar cvf %s %s", tmpAppDirName, fileName, strings.Join(tarFilesArr, " "))
+	cmd := exec.Command("/bin/bash", "-c", shellTar)
+	err = cmd.Run()
+	//err = utils.Tar(tarFilesArr,config.Path+"/"+fileName)
+	////err = utils.Compress(tarFiles, config.Path+"/"+fileName)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals]创建tar失败: ", err)
+			os.Exit(1)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	_, err = utils.CopyFile(tmpAppDirName+"/"+fileName, config.Path+"/"+fileName)
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("[globals]创建tar失败: ", err)
