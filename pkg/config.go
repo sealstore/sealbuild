@@ -7,7 +7,7 @@ import (
 	"text/template"
 )
 
-const templateText = string(`LOAD tar -zxvf image.tar.gz && docker load -i image.tar
+const templateText = string(`LOAD tar -zxvf images.tar.gz && docker load -i images.tar
 APPLY {{.Shell}}
 DELETE kubectl delete -f manifests
 REMOVE sleep 10 && docker rmi -f {{.Images}}`)
