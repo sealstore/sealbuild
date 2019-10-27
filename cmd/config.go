@@ -17,36 +17,18 @@ package cmd
 import (
 	"fmt"
 	"github.com/sealstore/sealbuild/pkg"
-	"github.com/sealstore/sealbuild/pkg/utils"
 	"github.com/spf13/cobra"
-	"os"
 )
 
-var cfgFile string
-var tmpFile string
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "sealbuild",
-	Short: "A brief description of your application",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+// configCmd represents the config command
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "print config template to console",
 	Run: func(cmd *cobra.Command, args []string) {
-		config := &utils.Config{}
-		utils.LoadIni(config, cfgFile)
-		utils.VarsConfig = config
-		pkg.Build(config.AppEnable)
+		fmt.Println(pkg.TemplateText())
 	},
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&cfgFile, "conf", "f", "config.ini", "sealbuild config.ini file location")
-	rootCmd.Flags().StringVarP(&tmpFile, "template", "t", "", "config template file")
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	rootCmd.AddCommand(configCmd)
 }

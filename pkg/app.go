@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func app() {
+func app(templateFile string) {
 	config := utils.VarsConfig
 	//生成的文件名称
 	fileName := config.AppName + config.AppVersion + ".tar"
@@ -54,7 +54,23 @@ func app() {
 	} else {
 		shell = "kubectl apply -f manifests"
 	}
-	writeFile(tmpAppDirName+"/config", templateContent(shell, strings.Join(images, " ")))
+	var templateFileContent string
+	if templateFile == "" {
+		templateFileContent = TemplateText()
+	} else {
+		templateFileData, err := ioutil.ReadFile(templateFile)
+		templateFileContent = string(templateFileData)
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("[globals]template file read failed:", err)
+			}
+		}()
+		if err != nil {
+			panic(1)
+		}
+	}
+	writeFile(tmpAppDirName+"/config", templateContent(templateFileContent, shell, strings.Join(images, " ")))
+
 	//manifests
 	_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
 	_ = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests")

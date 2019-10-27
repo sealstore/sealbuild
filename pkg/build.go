@@ -1,7 +1,7 @@
 package pkg
 
-func Build(appEnable bool) {
+func Build(appEnable bool, templateFile string) {
 	if appEnable {
-		app()
+		app(templateFile)
 	}
 }
