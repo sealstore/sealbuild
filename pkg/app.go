@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -86,6 +87,16 @@ func app(templateFile string) {
 	}
 	writeFile(tmpAppDirName+"/config", templateContent(templateFileContent, shell, strings.Join(images, " "), manifests))
 	tarFilesArr = append(tarFilesArr, "config")
+
+	//files
+	if config.AppFiles != "" {
+		files := strings.Split(config.AppFiles, ",")
+		for _, v := range files {
+			f := filepath.Base(v)
+			_, err = utils.CopyFile(v, tmpAppDirName+"/"+f)
+			tarFilesArr = append(tarFilesArr, f)
+		}
+	}
 
 	//tar
 	tmpAppDir, _ := os.Open(tmpAppDirName)

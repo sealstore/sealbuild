@@ -11,4 +11,5 @@ type Config struct {
 	AppKustomize bool   `key:"app.kustomize",default:"false"`
 	AppManifests string `key:"app.manifests"`
 	AppImages    string `key:"app.images"`
+	AppFiles     string `key:"app.files"`
 }
