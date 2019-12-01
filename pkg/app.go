@@ -18,17 +18,6 @@ func app(templateFile string) {
 	logger.Warn("app:%s", fileName)
 	imagesData, _ := ioutil.ReadFile(config.AppImages)
 	logger.Debug("\njson:%s", string(imagesData))
-	var images []string
-	//注意数组转换需要加 &
-	_ = json.Unmarshal(imagesData, &images)
-	for _, v := range images {
-		if v != "" {
-			utils.DockerPull(v)
-		}
-	}
-	//生成文件
-	tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", config.AppName+config.AppVersion)
-	utils.DockerSave(tmpImageName, images)
 	tmpAppDirName := fmt.Sprintf("/tmp/%s", config.AppName)
 	_ = os.RemoveAll(tmpAppDirName)
 	err := os.Mkdir(tmpAppDirName, 0755)
@@ -41,19 +30,45 @@ func app(templateFile string) {
 	if err != nil {
 		panic(1)
 	}
-	_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
+	var tarFilesArr []string
 
-	tarFile, _ := os.Open(tmpAppDirName + "/images.tar")
-	_ = utils.Compress([]*os.File{tarFile}, tmpAppDirName+"/images.tar.gz")
-	_ = os.RemoveAll(tmpAppDirName + "/images.tar")
+	//images.tar.gz
+	var images []string
+	//注意数组转换需要加 &
+	_ = json.Unmarshal(imagesData, &images)
+	if len(images) != 0 {
+		for _, v := range images {
+			if v != "" {
+				utils.DockerPull(v)
+			}
+		}
+		tmpImageName := fmt.Sprintf("/tmp/images_%s.tar", config.AppName+config.AppVersion)
+		utils.DockerSave(tmpImageName, images)
+		_ = os.Rename(tmpImageName, tmpAppDirName+"/images.tar")
+
+		tarFile, _ := os.Open(tmpAppDirName + "/images.tar")
+		_ = utils.Compress([]*os.File{tarFile}, tmpAppDirName+"/images.tar.gz")
+		_ = os.RemoveAll(tmpAppDirName + "/images.tar")
+		tarFilesArr = append(tarFilesArr, "images.tar.gz")
+	}
+
+	//manifests
+	var shell, manifests string
+	if config.AppManifests != "" {
+		_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
+		if err = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests"); err == nil {
+			tarFilesArr = append(tarFilesArr, "manifests")
+			if utils.VarsConfig.AppKustomize {
+				shell = "kubectl apply -k manifests"
+			} else {
+				shell = "kubectl apply -f manifests"
+			}
+			manifests = "manifests"
+		}
+
+	}
 
 	//config.json
-	var shell string
-	if utils.VarsConfig.AppKustomize {
-		shell = "kubectl apply -k manifests"
-	} else {
-		shell = "kubectl apply -f manifests"
-	}
 	var templateFileContent string
 	if templateFile == "" {
 		templateFileContent = TemplateText()
@@ -69,20 +84,15 @@ func app(templateFile string) {
 			panic(1)
 		}
 	}
-	writeFile(tmpAppDirName+"/config", templateContent(templateFileContent, shell, strings.Join(images, " ")))
+	writeFile(tmpAppDirName+"/config", templateContent(templateFileContent, shell, strings.Join(images, " "), manifests))
+	tarFilesArr = append(tarFilesArr, "config")
 
-	//manifests
-	_ = os.Mkdir(tmpAppDirName+"/manifests", 0755)
-	_ = utils.CopyDir(config.AppManifests, tmpAppDirName+"/manifests")
 	//tar
 	tmpAppDir, _ := os.Open(tmpAppDirName)
 	var tarFiles []*os.File
 	tarFiles = append(tarFiles, tmpAppDir)
 	logger.Info("[globals]开始创建压缩包。")
-	var tarFilesArr []string
-	tarFilesArr = append(tarFilesArr, "config")
-	tarFilesArr = append(tarFilesArr, "images.tar.gz")
-	tarFilesArr = append(tarFilesArr, "manifests")
+
 	shellTar := fmt.Sprintf("cd %s && tar cvf %s %s", tmpAppDirName, fileName, strings.Join(tarFilesArr, " "))
 	cmd := exec.Command("/bin/bash", "-c", shellTar)
 	err = cmd.Run()

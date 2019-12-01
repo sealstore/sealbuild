@@ -26,7 +26,7 @@ func writeFile(fileName string, data []byte) {
 	}
 }
 
-func templateContent(templateContent, shell, images string) []byte {
+func templateContent(templateContent, shell, images, manifests string) []byte {
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -36,11 +36,24 @@ func templateContent(templateContent, shell, images string) []byte {
 	if err != nil {
 		panic(1)
 	}
-	var envMap = make(map[string]interface{})
-	envMap["Remove"] = "sleep 10 && docker rmi -f " + images
-	envMap["Shell"] = shell
-	envMap["Load"] = "tar -zxvf images.tar.gz && docker load -i images.tar"
-	envMap["Delete"] = "kubectl delete -f manifests"
+	var envMap = map[string]interface{}{
+		"Load":   "",
+		"Shell":  "",
+		"Remove": "",
+		"Delete": "",
+		"Start":  "",
+		"Stop":   "",
+	}
+	if images != "" {
+		envMap["Remove"] = "sleep 10 && docker rmi -f " + images
+		envMap["Load"] = "tar -zxvf images.tar.gz && docker load -i images.tar"
+	}
+	if shell != "" {
+		envMap["Shell"] = shell
+	}
+	if manifests != "" {
+		envMap["Delete"] = "kubectl delete -f manifests"
+	}
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
