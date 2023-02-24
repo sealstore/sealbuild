@@ -22,7 +22,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/wonderivan/logger v1.0.0
-	golang.org/x/net v0.0.0-20190916140828-c8589233b77d // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.23.1 // indirect
 	gopkg.in/ini.v1 v1.46.0
